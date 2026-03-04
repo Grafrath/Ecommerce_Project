@@ -1,13 +1,88 @@
 백오피스 (Backoffice): 관리자 활동 이력 및 통합 권한 관리
 알림 (Notification): 메일 전송 등 외부 시스템 연동 (지연이 발생해도 메인 서버에 영향 없음)
 고객 센터 (CS): 상담 티켓, 챗봇
+
 상품 (Product): 전시, 검색, 카테고리
 회원 (Member): 개인정보, 로그인, 위시리스트
 리뷰 (Review): 상품에 종속되는 사용자 피드백
 장바구니 (Cart): 회원과 상품을 이어주는 휘발성 데이터 (PC 1번의 Redis 활용)
+
 주문 (Order): 전체 흐름의 중심
 결제 (Payment): 주문과 동시에 이루어져야 함
 재고 (Inventory): 결제 성공 시 무조건 깎여야 함
 프로모션 (Promotion): 결제 시 쿠폰/포인트가 즉시 차감되어야 함
 배송 (Delivery): 결제 완료 시 바로 배송 준비 상태로 넘어가야 함
 클레임 (Claim): 취소/환불 시 위 모든 것(재고, 결제, 쿠폰)이 한 번에 롤백되어야 함
+
+공통 의존성: Spring Web, Lombok, Spring Data JPA, H2 Database, Validation, Spring Security
+
+모듈 1 전용 의존성: Spring Data Redis (Access+Driver),
+
+모듈 2 전용 의존성: Spring Data Redis (Access+Driver), OAuth2 Client
+
+모듈 3 전용 의존성: Java Mail Sender
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+Ecommerce-monorepo/ (루트 프로젝트)
+├── build.gradle (전체 공통 설정, Java 21, Spring Boot 3.x)
+├── settings.gradle (include 'module-bootstrap', 'module-core', ...)
+│
+├── 📦 module-bootstrap/ (서버 실행 및 통합 설정)
+│   ├── build.gradle (core, catalog-member, support 모두 의존)
+│   └── src/main/java/com/team_e_commerce/
+│       └── EcommerceApplication.java (서버의 심장, @SpringBootApplication)
+│       └── resources/application.yml (DB 연결, 서버 포트 설정)
+│
+├── 📦 module-core/ (핵심 비즈니스 로직 - 주문/결제/재고)
+│   ├── build.gradle (의존성: module-catalog-member 단방향 허용)
+│   └── src/main/java/com/team_e_commerce/core/
+│       ├── order/ (주문 도메인)
+│       │   ├── domain/
+│       │   │   ├── Order.java (부모 엔티티 - 스냅샷 포함)
+│       │   │   ├── OrderLineItem.java (자식 엔티티)
+│       │   │   └── OrderOptionConverter.java (JSON 다중 옵션 변환기)
+│       │   └── service/
+│       │       └── OrderService.java (결제 검증 및 생성 흐름)
+│       │
+│       └── inventory/ (재고 도메인 - ⏳ 앞으로 만들 곳!)
+│           ├── domain/
+│           │   ├── Inventory.java (낙관적 락 @Version 포함)
+│           │   └── InventoryRepository.java 
+│           └── service/
+│               ├── InventoryService.java (트랜잭션 O - 실제 재고 차감)
+│               └── InventoryRetryFacade.java (트랜잭션 X - 충돌 시 0.05초 대기 후 재시도)
+│
+├── 📦 module-catalog-member/ (데이터 제공자 - 상품/회원)
+│   ├── build.gradle (다른 모듈 의존 X - 독립적)
+│   └── src/main/java/com/team_e_commerce/catalog/
+│       ├── api/internal/ (코어 모듈을 위한 내부 통신 방어막)
+│       │   ├── ProductInternalApi.java (인터페이스)
+│       │   └── ProductInternalDto.java (초경량 수동 매핑 레코드)
+│       │
+│       ├── product/ (상품 비즈니스 로직)
+│       │   ├── domain/
+│       │   │   └── Product.java (상품 기본 정보)
+│       │   └── service/
+│       │       └── ProductInternalServiceImpl.java (Api 인터페이스 실제 구현체, 숨김 처리)
+│       │
+│       └── member/ (회원 도메인)
+│           └── domain/
+│               └── Member.java
+│
+└── 📦 module-support/ (전역 공통 기술 - 도메인 의존성 X)
+    ├── build.gradle
+    └── src/main/java/com/team_e_commerce/support/
+        ├── exception/
+        │   ├── GlobalExceptionHandler.java (에러 응답 규격화)
+        │   └── ErrorResponse.java
+        └── config/
+            └── ... (기타 공통 인프라 설정)
