@@ -1,4 +1,4 @@
-﻿package com.team_e_commerce.common.annotation;
+package com.team_E_commerce.common.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
