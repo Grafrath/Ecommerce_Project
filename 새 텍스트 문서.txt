@@ -14,75 +14,62 @@
 배송 (Delivery): 결제 완료 시 바로 배송 준비 상태로 넘어가야 함
 클레임 (Claim): 취소/환불 시 위 모든 것(재고, 결제, 쿠폰)이 한 번에 롤백되어야 함
 
-공통 의존성: Spring Web, Lombok, Spring Data JPA, H2 Database, Validation, Spring Security
+공통 의존성: Spring Web, Lombok, Spring Data JPA, H2 Database, Validation, Spring Data Redis (Access+Driver)
 
-모듈 1 전용 의존성: Spring Data Redis (Access+Driver),
+모듈 1 전용 의존성: implementation project(':module-catalog-member')
 
-모듈 2 전용 의존성: Spring Data Redis (Access+Driver), OAuth2 Client
+모듈 2 전용 의존성: OAuth2 Client
 
 모듈 3 전용 의존성: Java Mail Sender
 
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
+Spring Security 현재는 boot에 추후 게이트웨이로
 
-tasks.named('test') {
-	useJUnitPlatform()
-}
+도메인별 통신 규약
 
-Ecommerce-monorepo/ (루트 프로젝트)
-├── build.gradle (전체 공통 설정, Java 21, Spring Boot 3.x)
-├── settings.gradle (include 'module-bootstrap', 'module-core', ...)
-│
-├── 📦 module-bootstrap/ (서버 실행 및 통합 설정)
-│   ├── build.gradle (core, catalog-member, support 모두 의존)
-│   └── src/main/java/com/team_e_commerce/
-│       └── EcommerceApplication.java (서버의 심장, @SpringBootApplication)
-│       └── resources/application.yml (DB 연결, 서버 포트 설정)
-│
-├── 📦 module-core/ (핵심 비즈니스 로직 - 주문/결제/재고)
-│   ├── build.gradle (의존성: module-catalog-member 단방향 허용)
-│   └── src/main/java/com/team_e_commerce/core/
-│       ├── order/ (주문 도메인)
-│       │   ├── domain/
-│       │   │   ├── Order.java (부모 엔티티 - 스냅샷 포함)
-│       │   │   ├── OrderLineItem.java (자식 엔티티)
-│       │   │   └── OrderOptionConverter.java (JSON 다중 옵션 변환기)
-│       │   └── service/
-│       │       └── OrderService.java (결제 검증 및 생성 흐름)
-│       │
-│       └── inventory/ (재고 도메인 - ⏳ 앞으로 만들 곳!)
-│           ├── domain/
-│           │   ├── Inventory.java (낙관적 락 @Version 포함)
-│           │   └── InventoryRepository.java 
-│           └── service/
-│               ├── InventoryService.java (트랜잭션 O - 실제 재고 차감)
-│               └── InventoryRetryFacade.java (트랜잭션 X - 충돌 시 0.05초 대기 후 재시도)
-│
-├── 📦 module-catalog-member/ (데이터 제공자 - 상품/회원)
-│   ├── build.gradle (다른 모듈 의존 X - 독립적)
-│   └── src/main/java/com/team_e_commerce/catalog/
-│       ├── api/internal/ (코어 모듈을 위한 내부 통신 방어막)
-│       │   ├── ProductInternalApi.java (인터페이스)
-│       │   └── ProductInternalDto.java (초경량 수동 매핑 레코드)
-│       │
-│       ├── product/ (상품 비즈니스 로직)
-│       │   ├── domain/
-│       │   │   └── Product.java (상품 기본 정보)
-│       │   └── service/
-│       │       └── ProductInternalServiceImpl.java (Api 인터페이스 실제 구현체, 숨김 처리)
-│       │
-│       └── member/ (회원 도메인)
-│           └── domain/
-│               └── Member.java
-│
-└── 📦 module-support/ (전역 공통 기술 - 도메인 의존성 X)
-    ├── build.gradle
-    └── src/main/java/com/team_e_commerce/support/
-        ├── exception/
-        │   ├── GlobalExceptionHandler.java (에러 응답 규격화)
-        │   └── ErrorResponse.java
-        └── config/
-            └── ... (기타 공통 인프라 설정)
+[결제/주문 생성 API의 Request/Response DTO 명세서]
+
+[Request DTO: OrderCreateRequest]
+필드명 (JSON Key)
+orderLines
+orderLines[].productId
+orderLines[].quantity
+couponId
+deliveryAddress
+paymentMethod
+isFromCart
+
+[Response DTO: OrderCreateResponse]
+필드명 (JSON Key)
+orderId
+orderStatus
+originalTotalAmount
+discountAmount
+finalPaidAmount
+estimatedDelivery
+
+코어 → 서포트 비동기 이벤트 통신 JSON 스키마 계획
+
+[Redis Pub/Sub 통신 기본 정보]
+
+발행 채널 (Topic): topic:notification:email
+
+발행자 (Publisher): module-core (주문/결제 완료 시점)
+
+구독자 (Subscriber): module-support (메일 발송 전담)
+
+[이벤트 JSON 스키마: OrderNotificationEvent]
+
+최상위 필드명 (Key)
+eventId
+eventType
+timestamp
+payload
+
+[payload 내부 상세 스키마]
+
+필드명 (Key)
+orderId
+receiverEmail
+receiverName
+representativeProductName
+totalPaidAmount
