@@ -57,7 +57,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAllExceptions(
             Exception ex, HttpServletRequest request) {
 
-        // ★ 서버 버그이므로 즉각적인 알림을 위해 error 로그 + 스택 트레이스 전체 출력
+        // 서버 버그이므로 즉각적인 알림을 위해 error 로그 + 스택 트레이스 전체 출력
         log.error("서버 내부 치명적 에러 발생! URI: {}", request.getRequestURI(), ex);
 
         // 프론트엔드에게는 서버 내부 구조(SQL, 패키지 경로)를 절대 노출하지 않고 포장해서 응답
