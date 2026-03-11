@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // [1차 방어선] 프론트엔드의 폼 입력값 검증 실패 (@Valid 에러)
+    // 프론트엔드의 폼 입력값 검증 실패 (@Valid 에러)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
@@ -35,12 +35,11 @@ public class GlobalExceptionHandler {
                 )
                 .collect(Collectors.toList());
 
-        // ErrorCode.INVALID_INPUT_VALUE는 미리 정의해두신 공통 에러코드(400 Bad Request)라고 가정합니다.
         ErrorResponse errorResponse = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, request.getRequestURI(), fieldErrors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
-    // [2차 방어선] 비즈니스 로직 예외 (예: 재고 부족, 권한 없음 등)
+    // 비즈니스 로직 예외 (예: 재고 부족, 권한 없음 등)
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(
             BusinessException ex, HttpServletRequest request) {
@@ -52,7 +51,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(ex.getErrorCode().getStatus()).body(errorResponse);
     }
 
-    // [3차 방어선] 예상치 못한 모든 서버 내부 에러 (최후의 보루)
+    // 서버 내부 에러
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(
             Exception ex, HttpServletRequest request) {
