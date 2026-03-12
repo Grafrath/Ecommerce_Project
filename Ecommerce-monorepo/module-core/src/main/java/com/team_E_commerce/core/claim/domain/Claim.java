@@ -14,7 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "claims")
+@Table(name = "claims", indexes = {
+        @Index(name = "idx_claim_member_id", columnList = "memberId"),
+        @Index(name = "idx_claim_created_at", columnList = "createdAt")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Claim extends BaseEntity {
