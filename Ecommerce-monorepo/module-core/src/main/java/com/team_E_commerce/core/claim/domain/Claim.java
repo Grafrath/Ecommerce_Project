@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,8 +46,15 @@ public class Claim extends BaseEntity {
     @Column(length = 500)
     private String reason;
 
-    private Integer claimAmount;
-    private Integer claimQuantity;
+    private Long claimAmount;
+    private Long claimQuantity;
+
+    @Column(name = "order_number", nullable = false)
+    private String orderNumber;
+
+    // 어드민 전용 거절 사유
+    @Column(name = "reject_reason", length = 500)
+    private String rejectReason;
 
     // ★ 컬렉션 저장 맹점 해결: List를 JSON 텍스트로 변환하여 하나의 컬럼에 저장
     @Convert(converter = StringListConverter.class)
@@ -62,8 +70,8 @@ public class Claim extends BaseEntity {
 
     @Builder
     public Claim(Long orderLineItemId, Long memberId, String productName, ClaimType claimType,
-                 String reason, Integer claimAmount, Integer claimQuantity,
-                 List<String> imageUrls, RefundAccount refundAccount) {
+                 String reason, Long claimAmount, Long claimQuantity,
+                 List<String> imageUrls, RefundAccount refundAccount, String orderNumber) {
         this.orderLineItemId = orderLineItemId;
         this.memberId = memberId;
         this.productName = productName;
@@ -74,6 +82,7 @@ public class Claim extends BaseEntity {
         this.claimQuantity = claimQuantity;
         this.imageUrls = imageUrls != null ? imageUrls : new ArrayList<>();
         this.refundAccount = refundAccount;
+        this.orderNumber = orderNumber;
     }
 
     public void withdraw() {
@@ -90,11 +99,19 @@ public class Claim extends BaseEntity {
         this.claimStatus = ClaimStatus.PROCESSING;
     }
 
-    public void complete() {
-        if (this.claimStatus != ClaimStatus.PROCESSING) {
+    public void complete() throws BusinessException {
+        // ★ 추가: 이미 완료된 상태라면 예외를 던지지 않고 종료 (멱등성 보장)
+        if (this.claimStatus == ClaimStatus.COMPLETED) {
+            return;
+        }
+
+        // 기존 검증 로직 (최대한 유지)
+        if (this.claimStatus != ClaimStatus.PROCESSING) { // 예시 상태
             throw new BusinessException(ErrorCode.INVALID_CLAIM_STATUS);
         }
+
         this.claimStatus = ClaimStatus.COMPLETED;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void reject() {
@@ -102,6 +119,14 @@ public class Claim extends BaseEntity {
             throw new BusinessException(ErrorCode.INVALID_CLAIM_STATUS);
         }
         this.claimStatus = ClaimStatus.REJECTED;
+    }
+
+    public void reject(String rejectReason) {
+        if (this.claimStatus != ClaimStatus.REJECTED && this.claimStatus != ClaimStatus.PROCESSING) {
+            throw new BusinessException(ErrorCode.INVALID_CLAIM_STATUS);
+        }
+        this.claimStatus = ClaimStatus.REJECTED;
+        this.rejectReason = rejectReason;
     }
 
     @Getter

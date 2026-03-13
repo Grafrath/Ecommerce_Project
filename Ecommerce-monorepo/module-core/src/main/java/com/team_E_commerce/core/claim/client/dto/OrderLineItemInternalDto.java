@@ -4,7 +4,8 @@ public record OrderLineItemInternalDto(
         Long orderLineItemId,
         Long memberId,
         String productName,
-        Integer unitPrice,
-        Integer cancelableQuantity,
-        String orderStatus
+        Long unitPrice,
+        Long cancelableQuantity,
+        String orderStatus,
+        String orderNumber
 ) {}

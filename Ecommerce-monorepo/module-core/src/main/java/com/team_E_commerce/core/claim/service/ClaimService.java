@@ -87,8 +87,8 @@ public class ClaimService {
                     .productName(orderItem.productName())
                     .claimType(request.claimType()) // Enum 직접 할당
                     .reason(request.reason())
-                    .claimAmount(orderItem.unitPrice() * reqItem.quantity())
-                    .claimQuantity(reqItem.quantity())
+                    .claimAmount((long) (orderItem.unitPrice() * reqItem.quantity()))
+                    .claimQuantity(Long.valueOf(reqItem.quantity()))
                     .imageUrls(request.imageUrls())
                     .refundAccount(refundAccount)
                     .build();
