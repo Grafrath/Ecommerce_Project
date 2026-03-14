@@ -10,14 +10,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+// ★ 수정 1: 인덱스 컬럼을 물리적 컬럼명(snake_case)으로 명확히 지정
 @Table(name = "claims", indexes = {
-        @Index(name = "idx_claim_member_id", columnList = "memberId"),
-        @Index(name = "idx_claim_created_at", columnList = "createdAt")
+        @Index(name = "idx_claim_member_id", columnList = "member_id"),
+        @Index(name = "idx_claim_created_at", columnList = "created_at")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -33,7 +33,7 @@ public class Claim extends BaseEntity {
     private Long memberId;
 
     @Column(nullable = false)
-    private String productName; // 프론트엔드 노출용 스냅샷
+    private String productName;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -52,16 +52,13 @@ public class Claim extends BaseEntity {
     @Column(name = "order_number", nullable = false)
     private String orderNumber;
 
-    // 어드민 전용 거절 사유
     @Column(name = "reject_reason", length = 500)
     private String rejectReason;
 
-    // ★ 컬렉션 저장 맹점 해결: List를 JSON 텍스트로 변환하여 하나의 컬럼에 저장
     @Convert(converter = StringListConverter.class)
     @Column(columnDefinition = "TEXT")
     private List<String> imageUrls = new ArrayList<>();
 
-    // ★ 값 타입(VO) 캡슐화: DB에는 3개의 컬럼으로 풀려서 저장됨
     @Embedded
     private RefundAccount refundAccount;
 
@@ -99,30 +96,23 @@ public class Claim extends BaseEntity {
         this.claimStatus = ClaimStatus.PROCESSING;
     }
 
-    public void complete() throws BusinessException {
-        // ★ 추가: 이미 완료된 상태라면 예외를 던지지 않고 종료 (멱등성 보장)
+    public void complete() {
         if (this.claimStatus == ClaimStatus.COMPLETED) {
             return;
         }
 
-        // 기존 검증 로직 (최대한 유지)
-        if (this.claimStatus != ClaimStatus.PROCESSING) { // 예시 상태
+        if (this.claimStatus != ClaimStatus.REQUESTED && this.claimStatus != ClaimStatus.PROCESSING) {
             throw new BusinessException(ErrorCode.INVALID_CLAIM_STATUS);
         }
 
         this.claimStatus = ClaimStatus.COMPLETED;
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    public void reject() {
-        if (this.claimStatus == ClaimStatus.COMPLETED || this.claimStatus == ClaimStatus.WITHDRAWN) {
-            throw new BusinessException(ErrorCode.INVALID_CLAIM_STATUS);
-        }
-        this.claimStatus = ClaimStatus.REJECTED;
     }
 
     public void reject(String rejectReason) {
-        if (this.claimStatus != ClaimStatus.REJECTED && this.claimStatus != ClaimStatus.PROCESSING) {
+        if (this.claimStatus == ClaimStatus.REJECTED) {
+            return;
+        }
+        if (this.claimStatus != ClaimStatus.REQUESTED && this.claimStatus != ClaimStatus.PROCESSING) {
             throw new BusinessException(ErrorCode.INVALID_CLAIM_STATUS);
         }
         this.claimStatus = ClaimStatus.REJECTED;

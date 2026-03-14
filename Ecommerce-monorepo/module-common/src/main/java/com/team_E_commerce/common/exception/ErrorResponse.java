@@ -14,8 +14,8 @@ public class ErrorResponse {
 
     private final LocalDateTime timestamp; // 에러 발생 시간
     private final int status;              // HTTP 상태 코드
-    private final String code;             // 도메인별 고유 에러 코드 (Enum Name)
-    private final String description;      // 프론트 알림창용 문구 (기존 message -> description으로 통일)
+    private final String code;             // 도메인별 고유 에러 코드
+    private final String description;      // 프론트 알림창용 문구
     private final String path;             // 에러가 발생한 API 주소
 
     // errors가 비어있으면 JSON 응답에서 아예 제외시킴
@@ -58,12 +58,11 @@ public class ErrorResponse {
                 .build();
     }
 
-    // 유효성 검증(Validation) 에러 디테일
-    @Getter
+    // 유효성 검증(Validation) 에러 디테일을 record로 깔끔하게 변경
     @Builder
-    public static class FieldErrorDetail {
-        private final String field;   // 예: "email"
-        private final String value;   // 예: "wrong-format" (거절된 입력값 추적)
-        private final String reason;  // 예: "이메일 형식이 올바르지 않습니다."
-    }
+    public record FieldErrorDetail(
+            String field,   // 예: "email"
+            String value,   // 예: "wrong-format" (거절된 입력값 추적)
+            String reason   // 예: "이메일 형식이 올바르지 않습니다."
+    ) {}
 }

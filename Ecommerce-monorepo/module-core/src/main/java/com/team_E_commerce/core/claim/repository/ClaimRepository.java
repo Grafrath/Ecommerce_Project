@@ -7,14 +7,18 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ClaimRepository extends JpaRepository<Claim, Long>, ClaimRepositoryCustom {
 
-    // 단순 조회용
-    boolean existsPendingClaimByOrderLineItemId(Long itemId);
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Claim c where c.id = :id")
     Optional<Claim> findByIdForUpdate(@Param("id") Long id);
+
+    @Query("SELECT c.orderLineItemId FROM Claim c WHERE c.orderLineItemId IN :itemIds AND c.claimStatus IN :statuses")
+    List<Long> findPendingClaimItemIds(
+            @Param("itemIds") List<Long> itemIds,
+            @Param("statuses") List<Claim.ClaimStatus> statuses
+    );
 }

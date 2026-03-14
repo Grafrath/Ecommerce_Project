@@ -1,99 +1,185 @@
 package com.team_E_commerce.core.claim.service;
 
-import com.team_E_commerce.core.claim.client.PaymentInternalClient;
-import com.team_E_commerce.core.claim.client.SupportInternalClient;
+import com.team_E_commerce.common.exception.BusinessException;
+import com.team_E_commerce.common.exception.ErrorCode;
+import com.team_E_commerce.core.TestCoreConfig;
+import com.team_E_commerce.core.claim.client.OrderInternalClient;
+import com.team_E_commerce.core.claim.client.dto.OrderLineItemInternalDto;
 import com.team_E_commerce.core.claim.domain.Claim;
+import com.team_E_commerce.core.claim.dto.ClaimCreateRequest;
+import com.team_E_commerce.core.claim.dto.ClaimResponse;
+import com.team_E_commerce.core.claim.dto.ClaimSearchCondition;
+import com.team_E_commerce.core.claim.event.ClaimWithdrawnEvent;
 import com.team_E_commerce.core.claim.repository.ClaimRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 
-import java.math.BigDecimal;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.BDDMockito.given;
 
-@SpringBootTest
-@Transactional // 테스트 종료 후 테스트 데이터 롤백을 위해 사용
-class ClaimAdminServiceIntegrationTest {
+@SpringBootTest(classes = TestCoreConfig.class)
+@RecordApplicationEvents
+class ClaimServiceIntegrationTest {
 
     @Autowired
-    private ClaimAdminService claimAdminService;
+    private ClaimService claimService;
 
     @Autowired
     private ClaimRepository claimRepository;
 
-    @MockitoBean
-    private PaymentInternalClient paymentInternalClient;
+    @Autowired
+    private ApplicationEvents applicationEvents; // 수집된 이벤트를 검증하기 위한 빈
 
     @MockitoBean
-    private SupportInternalClient supportInternalClient;
+    private OrderInternalClient orderInternalClient;
 
-    private Claim savedClaim;
-    private final Long ADMIN_ID = 999L;
+    private final Long MEMBER_ID = 1L;
+    private final String ORDER_NUMBER = "20260314-ORD-001";
 
-    @BeforeEach
-    void setUp() {
-        // 테스트용 정상 클레임 데이터 세팅 (PENDING 상태)
-        Claim claim = Claim.builder()
-                .orderLineItemId(100L)
-                .memberId(1L)
-                .productName("테스트 상품")
-                .orderNumber("20260313-0001")
-                .claimType(Claim.ClaimType.RETURN)
-                .reason("단순 변심")
-                .claimAmount(50000L)
-                .claimQuantity(1L)
-
-                .build();
-
-        savedClaim = claimRepository.save(claim);
+    @AfterEach
+    void tearDown() {
+        // 독립된 트랜잭션이 끝난 후 데이터를 직접 비워줍니다.
+        claimRepository.deleteAll();
     }
 
+    // 클레임 접수 테스트
     @Test
-    @DisplayName("관리자 환불 승인 - 백오피스 연동 실패 시 3회 재시도 후 전체 롤백된다")
-    void approveClaim_SupportClientFails_Retries3TimesAndRollsBack() {
-        // given: SupportClient가 호출될 때마다 무조건 예외(장애)를 던지도록 조작(Stubbing)
-        doThrow(new RuntimeException("백오피스 서버 타임아웃 장애 발생!"))
-                .when(supportInternalClient).sendAdminHistory(any());
+    @DisplayName("클레임 다건 접수 성공 - 배치 인서트로 정상 저장된다")
+    void createClaims_Success() {
+        // given: 주문 서버에서 2개의 상품 정보를 정상적으로 반환한다고 Mocking
+        List<OrderLineItemInternalDto> mockOrderItems = List.of(
+                new OrderLineItemInternalDto(100L, MEMBER_ID, "상품 A", 10000L, 2L, "DELIVERED", ORDER_NUMBER),
+                new OrderLineItemInternalDto(101L, MEMBER_ID, "상품 B", 20000L, 1L, "DELIVERED", ORDER_NUMBER)
+        );
+        given(orderInternalClient.getOrderItems(anyList())).willReturn(mockOrderItems);
 
-        // when & then: 승인 로직을 실행하면, 결국 RuntimeException이 터져야 정상이다.
-        assertThatThrownBy(() -> claimAdminService.approveClaim(ADMIN_ID, savedClaim.getId()))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("백오피스 서버 타임아웃 장애 발생!");
-
-        // ★ [핵심 검증 1] 결제 취소 API는 정상적으로 1번 호출되었는가? (이후 롤백됨)
-        verify(paymentInternalClient, times(1)).cancelPayment((Long) anyLong(), (Long) anyLong());
-
-        // ★ [핵심 검증 2] 백오피스 API는 우리가 설정한 대로 정확히 3번(최초1회 + 재시도2회) 찔러보았는가?
-        verify(supportInternalClient, times(3)).sendAdminHistory(any());
-
-        // ★ [핵심 검증 3] 트랜잭션이 롤백되어, 엔티티의 상태가 'COMPLETED'로 바뀌지 않고 그대로 유지되었는가?
-        // (JPA 영속성 컨텍스트 초기화 후 다시 조회하여 확인)
-        Claim rollbackClaim = claimRepository.findById(savedClaim.getId()).get();
-        assertThat(rollbackClaim.getClaimStatus()).isEqualTo(Claim.ClaimStatus.PROCESSING);
-    }
-
-    @Test
-    @DisplayName("관리자 환불 승인 - 정상 흐름 시 모든 클라이언트가 1번씩 호출되고 상태가 변경된다")
-    void approveClaim_Success() {
-        // given: 아무 예외도 던지지 않는 정상 Mock 상태
+        ClaimCreateRequest request = new ClaimCreateRequest(
+                List.of(
+                        new ClaimCreateRequest.ClaimItem(100L, 1),
+                        new ClaimCreateRequest.ClaimItem(101L, 1)
+                ),
+                "RETURN", "단순 변심", null, null
+        );
 
         // when
-        claimAdminService.approveClaim(ADMIN_ID, savedClaim.getId());
+        List<ClaimResponse> responses = claimService.createClaims(MEMBER_ID, request);
 
-        // then
-        verify(paymentInternalClient, times(1)).cancelPayment((Long) anyLong(), (Long) anyLong());
-        verify(supportInternalClient, times(1)).sendAdminHistory(any());
+        // then: 2건이 정상적으로 응답 객체로 반환되고, DB에도 정확히 2건이 저장되었는지 확인
+        assertThat(responses).hasSize(2);
 
-        Claim completedClaim = claimRepository.findById(savedClaim.getId()).get();
-        assertThat(completedClaim.getClaimStatus()).isEqualTo(Claim.ClaimStatus.COMPLETED);
+        List<Claim> savedInDb = claimRepository.findAll();
+        assertThat(savedInDb).hasSize(2)
+                .extracting("orderLineItemId")
+                .containsExactlyInAnyOrder(100L, 101L);
     }
 
+    @Test
+    @DisplayName("클레임 접수 실패 - 이미 접수된 상품 ID가 포함되어 있으면 예외가 발생한다")
+    void createClaims_Fail_AlreadyClaimed() {
+        // given: 이미 100번 상품에 대해 클레임이 진행 중인 상태로 DB 세팅
+        Claim existingClaim = Claim.builder()
+                .orderLineItemId(100L).memberId(MEMBER_ID).productName("상품 A")
+                .claimType(Claim.ClaimType.RETURN).reason("파손").claimAmount(10000L)
+                .claimQuantity(1L).orderNumber(ORDER_NUMBER).build();
+        claimRepository.save(existingClaim);
+
+        given(orderInternalClient.getOrderItems(anyList())).willReturn(List.of(
+                new OrderLineItemInternalDto(100L, MEMBER_ID, "상품 A", 10000L, 2L, "DELIVERED", ORDER_NUMBER)
+        ));
+
+        ClaimCreateRequest request = new ClaimCreateRequest(
+                List.of(new ClaimCreateRequest.ClaimItem(100L, 1)), // 이미 접수된 100번으로 재요청
+                "RETURN", "재요청", null, null
+        );
+
+        // when & then
+        assertThatThrownBy(() -> claimService.createClaims(MEMBER_ID, request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ALREADY_CLAIMED);
+    }
+
+    // 클레임 조회 테스트
+
+    @Test
+    @DisplayName("클레임 조회 성공 - QueryDSL 조건에 맞춰 필터링된 Page 객체가 반환된다")
+    void getClaimHistory_Success() {
+        // given: 서로 다른 상태의 클레임 2건 저장
+        claimRepository.save(Claim.builder()
+                .orderLineItemId(200L).memberId(MEMBER_ID).productName("상품 C")
+                .claimType(Claim.ClaimType.RETURN).reason("이유1").claimAmount(10000L).claimQuantity(1L).orderNumber(ORDER_NUMBER).build());
+
+        Claim completedClaim = Claim.builder()
+                .orderLineItemId(201L).memberId(MEMBER_ID).productName("상품 D")
+                .claimType(Claim.ClaimType.EXCHANGE).reason("이유2").claimAmount(20000L).claimQuantity(2L).orderNumber(ORDER_NUMBER).build();
+        completedClaim.complete(); // 상태를 COMPLETED로 변경
+        claimRepository.save(completedClaim);
+
+        // 검색 조건 세팅: RETURN 상태만 검색
+        ClaimSearchCondition condition = new ClaimSearchCondition(null, null, Claim.ClaimType.RETURN, null, MEMBER_ID, null);
+
+        // when
+        Page<ClaimResponse> result = claimService.getClaimHistory(MEMBER_ID, condition, PageRequest.of(0, 10));
+
+        // then: 2개 중 조건에 맞는 1개만 조회되어야 함
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).claimType()).isEqualTo(Claim.ClaimType.RETURN);
+    }
+
+    // 클레임 철회 테스트
+
+    @Test
+    @DisplayName("클레임 철회 성공 - 상태가 WITHDRAWN으로 변경되고 이벤트가 정확히 1번 발행된다")
+    void withdrawClaim_Success_And_EventPublished() {
+        // given: REQUESTED 상태의 클레임 저장
+        Claim claim = Claim.builder()
+                .orderLineItemId(300L).memberId(MEMBER_ID).productName("상품 E")
+                .claimType(Claim.ClaimType.CANCEL).reason("단순 변심").claimAmount(30000L)
+                .claimQuantity(1L).orderNumber(ORDER_NUMBER).build();
+        claimRepository.save(claim);
+
+        // when
+        claimService.withdrawClaim(MEMBER_ID, claim.getId());
+
+        // then 1: DB 상태 변경 확인
+        Claim withdrawnClaim = claimRepository.findById(claim.getId()).get();
+        assertThat(withdrawnClaim.getClaimStatus()).isEqualTo(Claim.ClaimStatus.WITHDRAWN);
+
+        // then 2: ★ @RecordApplicationEvents를 활용하여 이벤트 발행 검증
+        long eventCount = applicationEvents.stream(ClaimWithdrawnEvent.class).count();
+        assertThat(eventCount).isEqualTo(1); // 트랜잭션 내에서 이벤트가 딱 1번 발행되었는지 확인
+
+        ClaimWithdrawnEvent publishedEvent = applicationEvents.stream(ClaimWithdrawnEvent.class).findFirst().get();
+        assertThat(publishedEvent.claimId()).isEqualTo(claim.getId());
+    }
+
+    @Test
+    @DisplayName("클레임 철회 실패 - 본인의 클레임이 아닌 경우 접근 권한 예외가 발생한다")
+    void withdrawClaim_Fail_AccessDenied() {
+        // given: 멤버 1의 클레임 생성
+        Claim claim = Claim.builder()
+                .orderLineItemId(400L).memberId(MEMBER_ID).productName("상품 F")
+                .claimType(Claim.ClaimType.RETURN).reason("환불").claimAmount(40000L)
+                .claimQuantity(1L).orderNumber(ORDER_NUMBER).build();
+        claimRepository.save(claim);
+
+        Long otherMemberId = 999L;
+
+        // when & then: 다른 멤버 ID로 철회 시도
+        assertThatThrownBy(() -> claimService.withdrawClaim(otherMemberId, claim.getId()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
+    }
 }

@@ -15,14 +15,14 @@ public record ClaimResponse(
         Claim.ClaimType claimType,
         Claim.ClaimStatus claimStatus,
         String reason,
-        Integer claimAmount,
-        Integer claimQuantity,
+
+        Long claimAmount,
+        Long claimQuantity,
+
         List<String> imageUrls,
         RefundAccountResponse refundAccount,
         LocalDateTime createdAt
 ) {
-    // 엔티티를 받아서 DTO로 변환하는 메서드
-
     public static ClaimResponse from(Claim claim) {
         return ClaimResponse.builder()
                 .claimId(claim.getId())
@@ -31,9 +31,9 @@ public record ClaimResponse(
                 .claimType(claim.getClaimType())
                 .claimStatus(claim.getClaimStatus())
                 .reason(claim.getReason())
-                .claimAmount(Math.toIntExact(claim.getClaimAmount()))
-                .claimQuantity(Math.toIntExact(claim.getClaimQuantity()))
-                .imageUrls(claim.getImageUrls())
+                .claimAmount(claim.getClaimAmount())
+                .claimQuantity(claim.getClaimQuantity())
+                .imageUrls(claim.getImageUrls() != null ? List.copyOf(claim.getImageUrls()) : List.of())
                 .refundAccount(RefundAccountResponse.from(claim.getRefundAccount()))
                 .createdAt(claim.getCreatedAt())
                 .build();
@@ -42,7 +42,7 @@ public record ClaimResponse(
     // 환불 계좌 전용 내부 Record
     public record RefundAccountResponse(
             String bankName,
-            String accountNumber, // ★ 마스킹된 상태로 전달됨
+            String accountNumber,
             String accountHolder
     ) {
         public static RefundAccountResponse from(Claim.RefundAccount account) {
@@ -50,7 +50,7 @@ public record ClaimResponse(
 
             return new RefundAccountResponse(
                     account.getBankName(),
-                    MaskingUtils.maskAccountNumber(account.getAccountNumber()), // 분리된 유틸리티 호출
+                    MaskingUtils.maskAccountNumber(account.getAccountNumber()),
                     account.getAccountHolder()
             );
         }
