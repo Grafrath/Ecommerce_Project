@@ -1,56 +1,94 @@
 package com.team_e_commerce.core.inventory.domain;
 
-
+import com.team_e_commerce.common.entity.BaseEntity;
+import com.team_e_commerce.common.exception.BusinessException;
+import com.team_e_commerce.common.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Check;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Inventory {
+@Table(name = "inventory")
+// ★ 핵심: 총 재고가 0 이상, 점유 재고가 0 이상, 그리고 총 재고가 점유 재고보다 항상 크거나 같아야 함을 DB 레벨에서 강제
+@Check(constraints = "total_quantity >= 0 AND allocated_quantity >= 0 AND total_quantity >= allocated_quantity")
+public class Inventory extends BaseEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, unique = true)
-    // 카탈로그 모듈의 상품(또는 SKU) ID
+    @Id
+    @Column(name = "product_id") // 상품 ID를 그대로 PK로 사용 (1:1 식별 관계)
     private Long productId;
 
     @Column(nullable = false)
-    private Integer stockQuantity;
+    private Long totalQuantity; // 창고에 있는 총 물리 재고
 
-    // 수정될 때마다 JPA가 자동으로 1씩 증가시킵니다.
-    @Version
+    @Column(nullable = false)
+    private Long allocatedQuantity; // 결제 대기 중인 점유 재고
+
+    @Version // 낙관적 락을 위한 버전 관리
     private Long version;
 
-    public Inventory(Long productId, Integer stockQuantity) {
+    @Builder
+    public Inventory(Long productId, Long totalQuantity) {
         this.productId = productId;
-        this.stockQuantity = stockQuantity;
+        this.totalQuantity = totalQuantity;
+        this.allocatedQuantity = 0L;
     }
 
-    // 객체 스스로 재고를 차감합니다.
-    public void decrease(int quantity) {
-        // 음수나 0이 들어오는 경우 예방
+    // 1. 가용 재고 계산
+    public Long getAvailableQuantity() {
+        return this.totalQuantity - this.allocatedQuantity;
+    }
+
+    // 2. 재고 점유 (주문 생성 시점)
+    public void allocate(Long quantity) {
         if (quantity <= 0) {
-            throw new IllegalArgumentException("차감할 재고 수량은 1 이상이어야 합니다. 입력값: " + quantity);
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
-
-        // 남은 재고가 부족한지 확인
-        if (this.stockQuantity - quantity < 0) {
-            throw new OutOfStockException("재고가 부족합니다. 남은 수량: " + this.stockQuantity);
+        if (getAvailableQuantity() < quantity) {
+            throw new BusinessException(ErrorCode.OUT_OF_STOCK);
         }
-
-        this.stockQuantity -= quantity;
+        this.allocatedQuantity += quantity;
     }
 
-    // 관리자용 재고 수정 기능
-    public void addStock(int offsetQuantity) {
-        // 음수가 들어왔을 때, 현재 재고보다 더 많이 빼려고 하면 에러 발생
-        if (this.stockQuantity + offsetQuantity < 0) {
-            throw new IllegalArgumentException("재고는 0 미만으로 설정할 수 없습니다. 현재 재고: " + this.stockQuantity);
+    // 3. 재고 차감 (결제 완료 시점)
+    public void deductAllocated(Long quantity) {
+        if (this.allocatedQuantity < quantity || this.totalQuantity < quantity) {
+            throw new BusinessException(ErrorCode.OUT_OF_STOCK);
         }
-        this.stockQuantity += offsetQuantity;
+        this.allocatedQuantity -= quantity;
+        this.totalQuantity -= quantity;
+    }
+
+    // 4. 점유 해제 (결제 실패, 이탈, 좀비 재고 복구 시점)
+    public void restoreAllocated(Long quantity) {
+        if (this.allocatedQuantity < quantity) {
+            this.allocatedQuantity = 0L; // 방어 로직 (DB Check와 이중 방어)
+        } else {
+            this.allocatedQuantity -= quantity;
+        }
+    }
+
+    // 관리자용 재고 증가
+    public void increaseTotalQuantity(Long amount) {
+        if (amount <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        this.totalQuantity += amount;
+    }
+
+    // 관리자용 재고 차감
+    public void decreaseTotalQuantity(Long amount) {
+        if (amount <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        // 점유된 재고를 제외한 '가용 재고' 한도 내에서만 차감 가능
+        if (getAvailableQuantity() < amount) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        this.totalQuantity -= amount;
     }
 }
