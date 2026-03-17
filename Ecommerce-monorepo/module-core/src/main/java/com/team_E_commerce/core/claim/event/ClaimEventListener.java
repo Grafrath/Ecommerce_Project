@@ -1,6 +1,5 @@
 package com.team_E_commerce.core.claim.event;
 
-import com.team_E_commerce.core.claim.event.ClaimWithdrawnEvent;
 import com.team_E_commerce.core.claim.service.ClaimMessagePublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
