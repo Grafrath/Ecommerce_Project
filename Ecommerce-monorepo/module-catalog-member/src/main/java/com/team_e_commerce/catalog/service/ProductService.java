@@ -3,7 +3,7 @@ package com.team_e_commerce.catalog.service;
 import com.team_e_commerce.common.exception.BusinessException;
 import com.team_e_commerce.common.exception.ErrorCode;
 import com.team_e_commerce.catalog.domain.Product;
-import com.team_e_commerce.catalog.domain.ProductRepository;
+import com.team_e_commerce.catalog.repository.ProductRepository;
 import com.team_e_commerce.catalog.dto.ProductCreateRequest;
 import com.team_e_commerce.catalog.dto.ProductResponse;
 import lombok.RequiredArgsConstructor;

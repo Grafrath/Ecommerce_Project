@@ -1,6 +1,6 @@
 package com.team_e_commerce.catalog.service;
 
-import com.team_e_commerce.catalog.domain.CategoryRepository;
+import com.team_e_commerce.catalog.repository.CategoryRepository;
 import com.team_e_commerce.catalog.dto.CategoryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

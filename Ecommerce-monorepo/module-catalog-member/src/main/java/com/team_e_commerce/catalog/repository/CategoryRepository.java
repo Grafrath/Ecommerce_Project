@@ -1,5 +1,6 @@
-package com.team_e_commerce.catalog.domain;
+package com.team_e_commerce.catalog.repository;
 
+import com.team_e_commerce.catalog.domain.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
