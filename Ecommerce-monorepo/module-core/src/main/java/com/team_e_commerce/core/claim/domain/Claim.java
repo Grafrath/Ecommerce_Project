@@ -17,6 +17,8 @@ import java.util.List;
 // ★ 수정 1: 인덱스 컬럼을 물리적 컬럼명(snake_case)으로 명확히 지정
 @Table(name = "claims", indexes = {
         @Index(name = "idx_claim_member_id", columnList = "member_id"),
+        @Index(name = "idx_claim_order_number", columnList = "order_number"),
+        @Index(name = "idx_claim_order_line_item_id", columnList = "order_line_item_id"),
         @Index(name = "idx_claim_created_at", columnList = "created_at")
 })
 @Getter

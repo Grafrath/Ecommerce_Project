@@ -211,3 +211,25 @@ public class ClaimService {
     }
 
 }
+
+/*
+
+① [성능] autoCancelClaimItems 내 트랜잭션 병목
+
+현황: autoCancelClaimItems 메서드 전체에 @Transactional이 걸려 있고, 그 내부에서 pgClient.refund()를 루프(forEach)로 호출하고 있습니다.
+
+위험: 이전에 지적했던 '커넥션 점유 시간 증대' 문제가 이 메서드에서 그대로 발생합니다. PG사 응답이 지연되면 이 트랜잭션에 참여한 모든 DB 커넥션이 대기 상태에 빠져 전체 시스템 성능이 저하됩니다.
+
+② [정합성] createClaims와 cancelOrderItems의 역할 중복
+
+현황: 일반 고객의 클레임 접수(createClaims)는 한 트랜잭션으로 처리되고, 자동 취소(cancelOrderItems)는 단계별로 처리되고 있습니다.
+
+애매한 점: 고객이 직접 취소 버튼을 눌렀을 때도 즉시 환불이 일어나는 정책이라면, createClaims 역시 cancelOrderItems와 동일한 '단계별 처리' 로직을 타야 합니다. 현재 구조라면 고객 취소 시에는 여전히 정합성 위험이 남아 있습니다.
+
+③ [로직] autoCancelClaimItems의 롤백 불일치
+
+현황: PG 환불을 먼저 수행한 뒤, orderInternalClient.cancelOrderItems를 호출합니다.
+
+위험: 만약 PG 환불은 성공했는데, 바로 다음 줄인 orderInternalClient 호출에서 네트워크 오류가 발생하면 트랜잭션이 롤백됩니다. 결과적으로 '돈은 나갔지만 DB에는 클레임 기록이 없는' 상태가 되어 자동 취소 로직에서도 정합성이 깨집니다.
+
+*/
