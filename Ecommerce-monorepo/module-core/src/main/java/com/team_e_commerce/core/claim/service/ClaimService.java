@@ -31,6 +31,7 @@ public class ClaimService {
     private final ClaimRepository claimRepository;
     private final OrderInternalClient orderInternalClient;
     private final ApplicationEventPublisher eventPublisher;
+    private final InventoryService inventoryService;
 
     @Transactional
     public List<ClaimResponse> createClaims(Long memberId, ClaimCreateRequest request) {

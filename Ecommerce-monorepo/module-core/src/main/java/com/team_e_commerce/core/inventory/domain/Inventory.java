@@ -87,7 +87,7 @@ public class Inventory extends BaseEntity {
         }
         // 점유된 재고를 제외한 '가용 재고' 한도 내에서만 차감 가능
         if (getAvailableQuantity() < amount) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            throw new BusinessException(ErrorCode.OUT_OF_STOCK);
         }
         this.totalQuantity -= amount;
     }
