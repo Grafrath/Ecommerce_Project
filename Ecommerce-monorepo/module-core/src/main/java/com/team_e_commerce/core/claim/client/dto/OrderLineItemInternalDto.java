@@ -7,5 +7,7 @@ public record OrderLineItemInternalDto(
         Long unitPrice,
         Long cancelableQuantity,
         String orderStatus,
-        String orderNumber
+        String orderNumber,
+        String paymentKey,
+        Long actualPayAmount
 ) {}

@@ -11,14 +11,13 @@ public interface PaymentGatewayClient {
 
 // 모의 결제 구현체 (추후 TossPgClientImpl 등으로 교체 가능)
 @Component
-public class MockPgClientImpl implements PaymentGatewayClient {
+class MockPgClientImpl implements PaymentGatewayClient {
 
     @Override
     public void refund(String paymentKey, Long amount) {
         // ★ 깐깐한 검증: 환불 금액이 0원 이하일 경우 즉시 실패 처리
         if (amount <= 0) {
-            throw new BusinessException(ErrorCode.REFUND_FAILED,
-                    "환불 금액은 0원 이하일 수 없습니다. (요청 금액: " + amount + "원)");
+            throw new BusinessException(ErrorCode.REFUND_FAILED);
         }
 
         // 실제 연동 대신 로그로 대체

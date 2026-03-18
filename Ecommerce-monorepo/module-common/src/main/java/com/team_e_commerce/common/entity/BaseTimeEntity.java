@@ -25,4 +25,5 @@ public abstract class BaseTimeEntity {
     // 마지막 수정 시간
     protected
     LocalDateTime updatedAt;
+
 }
