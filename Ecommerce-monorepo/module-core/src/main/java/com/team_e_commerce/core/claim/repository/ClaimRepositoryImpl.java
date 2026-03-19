@@ -3,6 +3,8 @@ package com.team_e_commerce.core.claim.repository;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -108,6 +110,26 @@ public class ClaimRepositoryImpl implements ClaimRepositoryCustom {
             specifiers.add(claim.id.desc());
         }
 
+        return specifiers.toArray(new OrderSpecifier[0]);
+    }
+
+    private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable) {
+        List<OrderSpecifier<?>> specifiers = new ArrayList<>();
+
+        // ★ 추가: MANUAL_CHECK_REQUIRED 상태를 0순위로 취급하여 최상단에 고정 노출
+        NumberExpression<Integer> statusPriority = new CaseBuilder()
+                .when(claim.claimStatus.eq(Claim.ClaimStatus.MANUAL_CHECK_REQUIRED)).then(0)
+                .otherwise(1);
+        specifiers.add(statusPriority.asc());
+
+        // 기존 페이징 정렬 조건 적용
+        if (!pageable.getSort().isEmpty()) {
+            for (Sort.Order order : pageable.getSort()) {
+                Order direction = order.getDirection().isAscending() ? Order.ASC : Order.DESC;
+                PathBuilder<Claim> pathBuilder = new PathBuilder<>(Claim.class, "claim");
+                specifiers.add(new OrderSpecifier(direction, pathBuilder.get(order.getProperty())));
+            }
+        }
         return specifiers.toArray(new OrderSpecifier[0]);
     }
 }
