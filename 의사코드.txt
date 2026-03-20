@@ -1,34 +1,38 @@
-Controller Layer
+지금 클레임 도메인 구조 알려줄게
 
-	클라이언트로부터 요청 수신
-	회원정보와 상품정보, 수량, 결제수단등의 정보포함여부 체크
-
-Service Layer
-
-모듈2에서 회원 정보와 상품정보 전달 및 체크요청
-Repository를 호출하여 주문 엔티티를 대기상태로 임시저장
-
-	정보 유효할시
-		재고 도메인 호출
-		재고 도매인 호출하여 재고차감 진행
-		재고없을시 주문실패 진행
-
-		프로모션 사용여부에 따라 호출여부 선택
-
-		결제 도메인 호출
-			결제 성공시 
-				주문상태 성공으로 변경
-				주문정보 저장 및 회원정보의 주소 정보를 배송에게 전달 및 호출
-				장바구니, 알림등에 상태 전달
-				주문정보 저장
-			결제 실패시
-				주문상태 실패로 변경
-				재고 도메인 호출 및 주문상태 전달
-				결제 실패사실 전달 및 장바구니 호출
-	정보 유효x
-		어느 도메인에서 실패했는지 여부 확인후 에러코드와 함께 실패사
-
-Repository Layer
-
-조회한 데이터를 바탕으로 주문 엔티티와 주문상세정보 엔티티 임시저장
-주문이 성공적으로 완료시 저장
+Claim
+└── client
+	└── dto
+		└── AdminClaimHistoryRequestDto
+		└── OrderLineItemInternalDto
+	└── OrderInternalClient
+	└── PaymentInternalClient
+	└── SupportInternalClient
+└── controller
+	└── ClaimController
+	└── ClaimAdminController
+└── converter
+	└── StringListConverter
+└── dto
+	└── ClaimCreateRequest
+	└── ClaimResponse
+	└── ClaimSearchCondition
+└── entity
+	└── Claim
+	└── EventOutbox
+	└── PaymentMethod
+└── event
+	└── ClaimEventListener
+	└── ClaimWithdrawnEvent
+	└── OrderItemsCanceledEvent
+└── facade
+	└── ClaimAdminFacade
+	└── ClaimFacade
+└── repository
+	└── ClaimRepository
+	└── ClaimRepositoryCustom
+	└── ClaimRepositoryImpl
+└── service
+	└── ClaimAdminService
+	└── ClaimMessagePublisher
+	└── ClaimService
