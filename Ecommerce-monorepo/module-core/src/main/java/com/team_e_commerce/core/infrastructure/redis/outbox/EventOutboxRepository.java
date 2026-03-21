@@ -1,6 +1,5 @@
-package com.team_e_commerce.core.claim.repository;
+package com.team_e_commerce.core.infrastructure.redis.outbox;
 
-import com.team_e_commerce.core.claim.entity.EventOutbox;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
@@ -13,4 +12,8 @@ public interface EventOutboxRepository extends JpaRepository<EventOutbox, Long> 
 
     // 삭제 스케줄러용: 특정 시점 이전의 발행 완료된 데이터 일괄 삭제
     long deleteByPublishedTrueAndCreatedAtBefore(LocalDateTime threshold);
+
+    // 발행되지 않은(published = false) 이벤트 전체 조회
+    List<EventOutbox> findByPublishedFalse();
+
 }

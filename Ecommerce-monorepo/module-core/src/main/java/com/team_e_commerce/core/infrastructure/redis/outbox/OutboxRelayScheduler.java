@@ -1,36 +1,52 @@
 package com.team_e_commerce.core.infrastructure.redis.outbox;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+
+@Slf4j // 💡 로그 기록을 위해 추가
 @Component
 @RequiredArgsConstructor
 public class OutboxRelayScheduler {
 
     private final EventOutboxRepository outboxRepository;
-    private final StringRedisTemplate redisTemplate; // Redis Streams 발행용
+    private final StringRedisTemplate redisTemplate;
 
     // 10초 주기로 발송되지 않은 이벤트 폴링
     @Scheduled(fixedDelay = 10000)
-    @Transactional
+    @Transactional // 💡 jakarta 대신 Spring의 Transactional 사용 (기능 더 풍부함)
     public void publishOutboxEvents() {
-        List<EventOutbox> unpublishedEvents = outboxRepository.findByPublishedFalse();
+        // 💡 무한 재시도 방지: 10회 미만 실패한 건만 가져옴
+        List<EventOutbox> unpublishedEvents = outboxRepository.findByPublishedFalseAndRetryCountLessThan(10);
 
         for (EventOutbox event : unpublishedEvents) {
             try {
-                // Redis Streams에 데이터 발행
+                // 💡 Record.of 컴파일 에러 해결: 가장 직관적인 Key, Map 전달 API 사용
                 redisTemplate.opsForStream().add(
-                        Record.of(Map.of("payload", event.getPayload()))
-                                .withStreamKey("stream:" + event.getEventType())
+                        "stream:" + event.getEventType(),
+                        Map.of("payload", event.getPayload())
                 );
 
-                // 전송 성공 시 상태 업데이트
+                // 전송 성공 시 상태 업데이트 및 에러 메시지 초기화
                 event.markAsPublished();
+
             } catch (Exception e) {
-                log.error("Redis Streams 발행 실패 - eventId: {}", event.getId(), e);
-                // 실패한 건은 다음 스케줄러 턴에 자동으로 재시도됨 (At-Least-Once 보장)
+                // 💡 실패 시 DB에 이력 기록 (엔티티 메서드 활용)
+                event.increaseRetryCount();
+                event.markAsFailed(e.getMessage());
+
+                log.error("Redis Streams 발행 실패 (재시도 {}/10) - eventId: {}", event.getRetryCount(), event.getId(), e);
+
+                // 이번 실패로 10회 도달 시 Dead Letter 알림 로깅
+                if (event.getRetryCount() >= 10) {
+                    log.error("[CRITICAL] DEAD LETTER 발생: 이벤트 발행 영구 실패. 수동 개입 필요 - eventId: {}", event.getId());
+                }
             }
         }
     }

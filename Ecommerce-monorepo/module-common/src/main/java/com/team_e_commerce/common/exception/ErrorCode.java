@@ -25,6 +25,8 @@ public enum ErrorCode {
     INVALID_CLAIM_STATUS(HttpStatus.BAD_REQUEST, "현재 상태에서는 클레임 처리가 불가능합니다."),
     REFUND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "환불 처리 중 오류가 발생했습니다."),
     CLAIM_NOT_FOUND(HttpStatus.NOT_FOUND, "취소,환불요청을 찾을 수 없습니다."),
+    MANUAL_CHECK_REQUIRED(HttpStatus.INTERNAL_SERVER_ERROR, "결제는 취소되었으나 시스템 오류로 상태가 반영되지 않았습니다. 수동 확인이 필요합니다."),
+    TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "요청이 진행 중입니다. 잠시 후 다시 시도해 주세요."),
 
     // === [재고 (Inventory) 도메인 에러] ===
     OUT_OF_STOCK(HttpStatus.CONFLICT, "상품의 재고가 부족합니다."),

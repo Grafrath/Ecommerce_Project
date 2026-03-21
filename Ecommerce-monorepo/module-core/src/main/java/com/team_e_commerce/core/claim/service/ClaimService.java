@@ -2,7 +2,7 @@ package com.team_e_commerce.core.claim.service;
 
 import com.team_e_commerce.common.exception.BusinessException;
 import com.team_e_commerce.common.exception.ErrorCode;
-import com.team_e_commerce.core.claim.client.dto.OrderLineItemInternalDto;
+import com.team_e_commerce.common.dto.OrderLineItemInternalDto;
 import com.team_e_commerce.core.claim.dto.ClaimCreateRequest;
 import com.team_e_commerce.core.claim.dto.ClaimResponse;
 import com.team_e_commerce.core.claim.dto.ClaimSearchCondition;

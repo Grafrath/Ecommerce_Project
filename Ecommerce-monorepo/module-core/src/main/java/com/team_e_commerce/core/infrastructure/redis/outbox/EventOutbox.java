@@ -1,4 +1,4 @@
-package com.team_e_commerce.core.claim.entity;
+package com.team_e_commerce.core.infrastructure.redis.outbox;
 
 import com.team_e_commerce.common.entity.BaseEntity;
 import jakarta.persistence.*;

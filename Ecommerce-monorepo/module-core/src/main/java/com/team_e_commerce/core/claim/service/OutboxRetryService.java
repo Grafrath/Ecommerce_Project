@@ -1,7 +1,7 @@
 package com.team_e_commerce.core.claim.service;
 
-import com.team_e_commerce.core.claim.entity.EventOutbox;
-import com.team_e_commerce.core.claim.repository.EventOutboxRepository;
+import com.team_e_commerce.core.infrastructure.redis.outbox.EventOutbox;
+import com.team_e_commerce.core.infrastructure.redis.outbox.EventOutboxRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

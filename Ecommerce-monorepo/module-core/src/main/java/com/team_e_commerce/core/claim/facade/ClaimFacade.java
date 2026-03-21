@@ -3,7 +3,7 @@ package com.team_e_commerce.core.claim.facade;
 import com.team_e_commerce.common.exception.BusinessException;
 import com.team_e_commerce.common.exception.ErrorCode;
 import com.team_e_commerce.core.claim.client.OrderInternalClient;
-import com.team_e_commerce.core.claim.client.dto.OrderLineItemInternalDto;
+import com.team_e_commerce.common.dto.OrderLineItemInternalDto;
 import com.team_e_commerce.core.claim.dto.ClaimCreateRequest;
 import com.team_e_commerce.core.claim.dto.ClaimResponse;
 import com.team_e_commerce.core.claim.service.ClaimService;
@@ -36,7 +36,7 @@ public class ClaimFacade {
             // 2. 락 획득 시도 (따닥 방지)
             if (!lock.tryLock(3, 10, TimeUnit.SECONDS)) {
                 log.warn("클레임 생성 중복 요청 감지 - memberId: {}", memberId);
-                throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS, "요청이 진행 중입니다. 잠시 후 다시 시도해 주세요.");
+                throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS);
             }
 
             List<Long> requestedItemIds = request.claimItems().stream()
