@@ -70,14 +70,42 @@ public class PaymentService {
                     eventOutboxRepository.saveAll(List.of(outbox));
                     log.info("결제 성공 - orderId: {}, paymentId: {}", orderId, payment.getId());
 
+
+
                 } catch (JsonProcessingException e) {
                     // TODO: 프로젝트 실제 공통 예외 클래스로 변경해 주세요
                     throw new RuntimeException("이벤트 페이로드 직렬화 실패", e);
                 }
 
             } else {
+                // 1. 엔티티 상태를 FAILED로 변경하고 사유 기록
                 payment.fail(result.failReason());
-                log.info("결제 실패 - orderId: {}, 사유: {}", orderId, result.failReason());
+
+                try {
+                    // 2. 실패 사유를 포함하여 페이로드 구성
+                    String payload = objectMapper.writeValueAsString(
+                            Map.of(
+                                    "orderId", orderId,
+                                    "paymentId", payment.getId(),
+                                    "failReason", result.failReason()
+                            )
+                    );
+
+                    // 3. PAYMENT_FAILED 이벤트 아웃박스 생성
+                    EventOutbox outbox = EventOutbox.builder()
+                            .eventType("PAYMENT_FAILED")
+                            .payload(payload)
+                            .build();
+
+                    // 4. 정상 저장 (트랜잭션 커밋 유도)
+                    eventOutboxRepository.saveAll(List.of(outbox));
+                    log.info("결제 실패 및 보상 트랜잭션 이벤트 발행 - orderId: {}, 사유: {}", orderId, result.failReason());
+
+                } catch (JsonProcessingException e) {
+                    // 시스템 내부 직렬화 에러 시에만 런타임 예외 발생
+                    throw new RuntimeException("결제 실패 이벤트 페이로드 직렬화 실패", e);
+                }
+
             }
 
             return payment;
