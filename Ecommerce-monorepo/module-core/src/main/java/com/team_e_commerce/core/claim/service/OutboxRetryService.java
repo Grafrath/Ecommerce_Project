@@ -4,11 +4,13 @@ import com.team_e_commerce.core.infrastructure.redis.outbox.EventOutbox;
 import com.team_e_commerce.core.infrastructure.redis.outbox.EventOutboxRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -16,9 +18,10 @@ import java.util.List;
 public class OutboxRetryService {
 
     private final EventOutboxRepository outboxRepository;
-    private final ClaimMessagePublisher messagePublisher;
+    private final StringRedisTemplate redisTemplate;
 
     private static final int MAX_RETRIES = 5;
+    private static final String STREAM_KEY = "claim-events";
 
     // 5분마다 실행하여 누락/실패된 이벤트를 찾아 재발행 시도
     @Transactional
@@ -34,8 +37,13 @@ public class OutboxRetryService {
 
         for (EventOutbox outbox : failedEvents) {
             try {
-                // 재발행 시도
-                messagePublisher.publish(outbox.getEventType(), outbox.getPayload());
+                // 💡 Redis Streams 직접 발행
+                Map<String, String> message = Map.of(
+                        "eventType", outbox.getEventType(),
+                        "payload", outbox.getPayload()
+                );
+                redisTemplate.opsForStream().add(STREAM_KEY, message);
+
                 outbox.markAsPublished();
 
             } catch (Exception e) {

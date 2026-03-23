@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,10 +31,9 @@ public class ClaimController {
     // 1. 클레임 접수 (POST)
     @PostMapping
     public ApiResponse<List<ClaimResponse>> createClaims(
+            @AuthenticationPrincipal Long memberId,
             @Valid @RequestBody ClaimCreateRequest request
     ) {
-        Long memberId = 1L; // 💡 [임시 하드코딩] 모든 요청을 1번 회원으로 간주
-
         // 💡 서비스 직접 호출에서 퍼사드 위임으로 변경 (분산 락 및 타 모듈 데이터 조회 적용)
         List<ClaimResponse> responses = claimFacade.createClaims(memberId, request);
         return ApiResponse.created(responses); // 201 응답과 함께 생성된 데이터 반환
@@ -42,11 +42,10 @@ public class ClaimController {
     // 2. 내 클레임 내역 조회 (GET)
     @GetMapping
     public ApiResponse<PageResponse<ClaimResponse>> getClaimHistory(
+            @AuthenticationPrincipal Long memberId,
             @ModelAttribute ClaimSearchCondition condition,
             @PageableDefault(size = 10) Pageable pageable
     ) {
-        Long memberId = 1L; // 💡 [임시 하드코딩] 모든 요청을 1번 회원으로 간주
-
         // 💡 단순 조회는 Facade를 거칠 필요 없이 Service로 직행
         Page<ClaimResponse> claimPage = claimService.getClaimHistory(memberId, condition, pageable);
         return ApiResponse.ok(new PageResponse<>(claimPage));
@@ -55,10 +54,9 @@ public class ClaimController {
     // 3. 클레임 철회 (PATCH)
     @PatchMapping("/{claimId}/withdraw")
     public ApiResponse<Void> withdrawClaim(
+            @AuthenticationPrincipal Long memberId,
             @PathVariable @Positive(message = "올바른 클레임 ID를 입력해 주세요.") Long claimId // 💡 비정상적인 ID 차단 방어벽
     ) {
-        Long memberId = 1L; // 💡 [임시 하드코딩] 모든 요청을 1번 회원으로 간주
-
         // 💡 단순 상태 변경이므로 Service로 직행
         claimService.withdrawClaim(memberId, claimId);
 

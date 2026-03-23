@@ -1,3 +1,6 @@
+docker run --name my-redis -p 6379:6379 -d redis
+docker ps
+
 지금 클레임 도메인 구조 알려줄게
 
 Claim

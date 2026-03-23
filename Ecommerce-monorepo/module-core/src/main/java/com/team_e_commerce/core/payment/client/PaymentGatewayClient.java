@@ -1,4 +1,4 @@
-package com.team_e_commerce.core.payment.infrastructure;
+package com.team_e_commerce.core.payment.client;
 
 import com.team_e_commerce.common.exception.BusinessException;
 import com.team_e_commerce.common.exception.ErrorCode;
