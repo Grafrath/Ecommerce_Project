@@ -1,0 +1,26 @@
+1. Next.js 프로젝트 생성
+    npx create-next-app@latest my-portfolio --typescript --tailwind --eslint
+
+2. shadcn/ui 초기화
+    cd my-portfolio
+    npx shadcn@latest init
+    npm install -D @tailwindcss/cli
+    npx tailwindcss init -p
+
+3. 필수 UI 컴포넌트 설치
+    npx shadcn@latest add button card switch badge navigation-menu
+
+4. 테마 및 애니메이션 라이브러리 설치
+    npm install next-themes framer-motion
+
+5. Netlify 배포를 위한 라이브러리 설치
+    npm install -D @netlify/plugin-nextjs
+
+기존 소스코드 내용 전환
+
+외부 실행방법
+    cd my-portfolio
+    npm install
+    npm run dev
+
+Next.js, typescript, tailwind, shadcn/ui 사용 희망
