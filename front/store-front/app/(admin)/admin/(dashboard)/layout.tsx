@@ -1,7 +1,7 @@
 'use client';
 
 // 1. CSS 격리 방어벽 (일반 쇼핑몰 테마 보호용 - 절대 지우지 마세요)
-import "@/styles/admin/globals.css";
+import "@/styles/admin/css/globals.css";
 
 // 2. 템플릿 컴포넌트 Import 
 import Header from "@/components/admin/layout/header/Header";

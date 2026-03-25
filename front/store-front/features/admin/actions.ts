@@ -32,3 +32,8 @@ export async function adminLoginAction(formData: FormData): Promise<ActionRespon
         return { success: false, error: error.message || '아이디 또는 비밀번호가 일치하지 않습니다.' };
     }
 }
+
+export async function adminLogoutAction() {
+    const cookieStore = await cookies();
+    cookieStore.delete('adminToken'); // 브라우저에서 관리자 쿠키 삭제
+}
