@@ -24,3 +24,4 @@
     npm run dev
 
 Next.js, typescript, tailwind, shadcn/ui 사용 희망
+
