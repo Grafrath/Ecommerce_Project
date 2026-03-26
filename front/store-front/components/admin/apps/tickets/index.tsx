@@ -1,9 +1,21 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import CardBox from "@/app/components/shared/CardBox";
-import TicketFilter from "@/app/components/apps/tickets/TicketFilter";
-import TicketListing from "@/app/components/apps/tickets/TicketListing";
-import { TicketType } from "@/app/(DashboardLayout)/types/ticket";
+import CardBox from "../../shared/CardBox";
+import TicketFilter from "./TicketFilter";
+import TicketListing from "./TicketListing";
+
+// 2. 잃어버린 타입을 여기서 직접 창조하여 하위 컴포넌트들에게 빌려줍니다.
+export interface TicketType {
+  id: number;
+  ticketTitle: string;
+  ticketDescription: string;
+  status: string;
+  label: string;
+  thumb: string;
+  agentName: string;
+  date: Date | string;
+  deleted: boolean;
+}
 
 const TicketsApp = () => {
   const [tickets, setTickets] = useState<TicketType[]>([]);
@@ -13,13 +25,9 @@ const TicketsApp = () => {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const res = await fetch("/api/ticket", {
-          headers: {
-            browserrefreshed: "false",
-          },
-        });
+        const res = await fetch("/api/admin/tickets");
         const json = await res.json();
-        setTickets(json.data);
+        setTickets(json.data || []);
       } catch (err) {
         console.error("Error fetching tickets:", err);
       }
@@ -29,11 +37,10 @@ const TicketsApp = () => {
 
   const deleteTicket = async (id: number) => {
     try {
-      await fetch("/api/ticket", {
+      await fetch(`/api/admin/tickets/${id}`, {
         method: "DELETE",
-        body: JSON.stringify({ id }),
       });
-      setTickets((prev) => prev.filter((t) => t.Id !== id));
+      setTickets((prev) => prev.filter((t) => t.id !== id));
     } catch (err) {
       console.error("Error deleting ticket:", err);
     }
@@ -41,7 +48,7 @@ const TicketsApp = () => {
 
   const searchTickets = (text: string) => {
     setTicketSearch(text);
-  };  
+  };
 
   return (
     <CardBox>

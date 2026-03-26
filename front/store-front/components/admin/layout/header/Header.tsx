@@ -5,9 +5,10 @@ import { useTheme } from 'next-themes'
 import { Icon } from '@iconify/react'
 import Profile from './Profile'
 import Link from 'next/link'
+import Image from 'next/image' // Image 추가
 import Notifications from './Notifications'
 import SidebarLayout from '../sidebar/Sidebar'
-import FullLogo from '../shared/logo/FullLogo'
+// FullLogo import는 더 이상 사용하지 않으므로 제거해도 좋습니다.
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -15,7 +16,6 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 const Header = () => {
   const { theme, setTheme } = useTheme()
   const [isSticky, setIsSticky] = useState(false)
-  const [mobileMenu, setMobileMenu] = useState('')
   const [isOpen, setIsOpen] = useState(false)
 
   useEffect(() => {
@@ -40,116 +40,72 @@ const Header = () => {
   return (
     <>
       <header
-        className={`sticky top-0 z-2 ${
-          isSticky ? 'bg-background shadow-md fixed w-full' : 'bg-transparent'
-        }`}>
-        <nav
-          className={`rounded-none  py-4 sm:ps-6 max-w-full! sm:pe-10 dark:bg-dark flex justify-between items-center px-6`}>
-          {/* Mobile Toggle Icon */}
-          <div
-            onClick={() => {
-              setIsOpen(true)
-            }}
-            className='px-[15px] hover:text-primary dark:hover:text-primary text-link dark:text-darklink relative after:absolute after:w-10 after:h-10 after:rounded-full hover:after:bg-lightprimary  after:bg-transparent rounded-full xl:hidden flex justify-center items-center cursor-pointer'>
-            <Icon icon='tabler:menu-2' height={20} width={20} />
-          </div>
+        className={`sticky top-0 z-[10] ${isSticky ? 'bg-background/95 backdrop-blur shadow-md' : 'bg-transparent'
+          }`}>
+        <nav className='py-4 sm:ps-6 max-w-full sm:pe-10 flex justify-between items-center px-6'>
 
-          <div className='block xl:hidden'>
-            <FullLogo />
-          </div>
-
-          <div className='flex xl:hidden items-center'>
+          {/* 1. 모바일 영역 (왼쪽: 사이드바 토글 / 중앙: 우리 로고) */}
+          <div className='flex items-center gap-4 xl:hidden'>
             <div
-              className='hover:text-primary px-2 md:px-15 group focus:ring-0 rounded-full flex justify-center items-center cursor-pointer text-gray relative'
-              onClick={toggleMode}>
-              <span className='flex items-center justify-center relative after:absolute after:w-10 after:h-10 after:rounded-full after:-top-1/2   group-hover:after:bg-lightprimary'>
-                {theme === 'light' ? (
-                  <Icon icon='tabler:moon' width='20' />
-                ) : (
-                  <Icon
-                    icon='solar:sun-bold-duotone'
-                    width='20'
-                    className='group-hover:text-primary'
-                  />
-                )}
-              </span>
+              onClick={() => setIsOpen(true)}
+              className='p-2 hover:bg-lightprimary rounded-full cursor-pointer transition-colors'>
+              <Icon icon='tabler:menu-2' height={20} width={20} />
             </div>
 
-            <div className='xl:block '>
-              <div className='flex gap-0 items-center relative'>
-                {/* Chat */}
-                <Notifications />
-              </div>
-            </div>
-
-            {/* Profile Dropdown */}
-            <Profile />
+            <Link href="/admin/dashboard">
+              <Image
+                src='/admin/images/logos/logo-square.png'
+                alt='Logo'
+                height={32}
+                width={32}
+                className='object-contain'
+              />
+            </Link>
           </div>
 
-          <div className='hidden xl:flex items-center justify-between w-full'>
-            <div className='flex items-center gap-2'>
-              {/* Search Icon */}
-
-              <div className='relative'>
-                <Icon
-                  icon='solar:magnifer-linear'
-                  width={18}
-                  height={18}
-                  className='absolute left-3 top-1/2 -translate-y-1/2'
-                />
-                <Input
-                  type='text'
-                  placeholder='Search...'
-                  className='rounded-xl pl-10'
-                />
-              </div>
+          {/* 2. PC 영역 (왼쪽: 검색창) */}
+          <div className='hidden xl:flex items-center gap-2'>
+            <div className='relative'>
+              <Icon
+                icon='solar:magnifer-linear'
+                width={18}
+                height={18}
+                className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400'
+              />
+              <Input
+                type='text'
+                placeholder='상품명, 주문번호, 고객명 검색...'
+                className='rounded-xl pl-10 w-72 focus:ring-1 focus:ring-primary border-slate-200'
+              />
             </div>
-            <div className='flex w-full justify-end items-end'>
-              <div className='flex gap-0 items-center '>
-                <div className='relative lg:block hidden group w-fit shadow-grid-shadow bg-[radial-gradient(100%_707.08%_at_0%_0%,#15CEBD_0%,#548AFE_33.82%,#E02FD6_72.12%,#FDB54E_100%)] p-0.5 rounded-full'>
-                  <Link
-                    target='_blank'
-                    href={'https://adminmart.com/product/modernize-tailwind-nextjs-dashboard-template/#product-demo-section'}
-                    className='flex items-center gap-2.5 px-3 py-1.5 bg-background rounded-full transition-all dark:hover:bg-[radial-gradient(100%_707.08%_at_0%_0%,#15CEBD36_0%,#548AFE36_33.82%,#E02FD636_72.12%,#FDB54E36_100%)] group hover:bg-[radial-gradient(100%_707.08%_at_0%_0%,#15CEBD36_0%,#548AFE36_33.82%,#E02FD636_72.12%,#FDB54E36_100%)]'>
-                    <p className='text-base font-semibold'>Check Pro Version</p>
-                  </Link>
-                </div>
+          </div>
 
-                {/* ✅ Dark/Light Toggle */}
-                <div
-                  className='hover:text-primary px-15 group focus:ring-0 rounded-full flex justify-center items-center cursor-pointer text-gray relative'
-                  onClick={toggleMode}>
-                  <span className='flex items-center justify-center relative after:absolute after:w-10 after:h-10 after:rounded-full after:-top-1/2   group-hover:after:bg-lightprimary'>
-                    {theme === 'light' ? (
-                      <Icon icon='tabler:moon' width='20' />
-                    ) : (
-                      <Icon
-                        icon='solar:sun-bold-duotone'
-                        width='20'
-                        className='group-hover:text-primary'
-                      />
-                    )}
-                  </span>
-                </div>
+          {/* 3. 공통 우측 영역 (테마 토글, 알림, 프로필) */}
+          <div className='flex items-center gap-2 md:gap-4'>
 
-                <div className='xl:block '>
-                  <div className='flex gap-0 items-center relative'>
-                    {/* Chat */}
-                    <Notifications />
-                  </div>
-                </div>
-
-                {/* Profile Dropdown */}
-                <Profile />
-              </div>
+            {/* 다크/라이트 모드 토글 */}
+            <div
+              className='p-2 hover:bg-lightprimary rounded-full cursor-pointer transition-colors'
+              onClick={toggleMode}>
+              {theme === 'light' ? (
+                <Icon icon='tabler:moon' width='20' />
+              ) : (
+                <Icon icon='solar:sun-bold-duotone' width='20' className='text-yellow-500' />
+              )}
             </div>
+
+            {/* 알림창 */}
+            <Notifications />
+
+            {/* 프로필 드롭다운 */}
+            <Profile />
           </div>
         </nav>
       </header>
 
-      {/* Mobile Sidebar */}
+      {/* 모바일 사이드바 시트 */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side='left' className='w-64 p-0'>
+        <SheetContent side='left' className='w-64 p-0 border-none shadow-xl'>
           <VisuallyHidden>
             <SheetTitle>sidebar</SheetTitle>
           </VisuallyHidden>

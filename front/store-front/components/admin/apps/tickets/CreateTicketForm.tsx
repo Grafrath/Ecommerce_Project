@@ -1,19 +1,21 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { isValid, format } from "date-fns";
-import { TicketType } from "@/app/(DashboardLayout)/types/ticket";
+// 1. index.tsx에서 직접 만든 타입을 불러옵니다.
+import { TicketType } from "./index";
+// 2. CardBox 경로를 상대 경로로 수정합니다.
 import CardBox from "../../shared/CardBox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Input } from "../../../ui/input";
+import { Label } from "../../../ui/label";
+import { Button } from "../../../ui/button";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+} from "../../../ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "../../../ui/avatar";
 import { ChevronDown } from "lucide-react";
 
 const agents = [
@@ -24,8 +26,6 @@ const agents = [
 ];
 
 const CreateTicketForm = () => {
-  const [tickets, setTickets] = useState<TicketType[]>([]);
-  const [ticketId, setTicketId] = useState<number | undefined>(undefined);
   const [ticketDate, setTicketDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
@@ -36,54 +36,32 @@ const CreateTicketForm = () => {
 
   const router = useRouter();
 
-  // Fetch tickets to calculate new ID
-  useEffect(() => {
-    const fetchTickets = async () => {
-      const res = await fetch("/api/ticket", {
-        method: "GET",
-        headers: { browserrefreshed: "false" },
-      });
-      const data = await res.json();
-      if (data?.data) {
-        setTickets(data.data);
-        const maxId = data.data.reduce(
-          (max: number, ticket: TicketType) => (ticket.Id > max ? ticket.Id : max),
-          0
-        );
-        setTicketId(maxId + 1);
-      }
-    };
-    fetchTickets();
-  }, []);
-
-  // Submit new ticket to API
   const handleSubmit = async () => {
     if (!ticketTitle || !ticketDescription) {
       alert("Please fill out all fields.");
       return;
     }
 
-    const newTicket: TicketType = {
-      Id: ticketId!,
+    const newTicket = {
       ticketTitle,
       ticketDescription,
-      Status: "Open",
-      Label: "primary",
+      status: "대기중",
+      label: "primary",
       thumb: agentPhoto,
-      AgentName: selectedAgent.name,
-      Date: new Date(ticketDate),
+      agentName: selectedAgent.name,
+      date: new Date(ticketDate),
       deleted: false,
     };
 
     try {
-      await fetch("/api/ticket", {
+      await fetch("/api/admin/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newTicket),
       });
 
       resetForm();
-      router.push("/apps/tickets");
+      router.push("/admin/tickets");
     } catch (error) {
       console.error("Failed to create ticket", error);
     }
@@ -104,13 +82,11 @@ const CreateTicketForm = () => {
 
   return (
     <CardBox>
-      <h2 className="text-lg font-semibold mb-4">Create New Ticket</h2>
-      <p>ID : {ticketId !== undefined ? ticketId : ""}</p>
+      <h2 className="text-lg font-semibold mb-4">새 티켓 생성</h2>
       <p>Date : {formattedOrderDate}</p>
 
       <div className="bg-lightgray dark:bg-gray-800/70 p-6 my-6 rounded-md">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Ticket Title */}
           <div>
             <Label htmlFor="ticketTitle" className="mb-2 block">
               Ticket Title
@@ -124,7 +100,6 @@ const CreateTicketForm = () => {
             />
           </div>
 
-          {/* Ticket Description */}
           <div>
             <Label htmlFor="ticketDescription" className="mb-2 block">
               Ticket Description
@@ -139,7 +114,6 @@ const CreateTicketForm = () => {
           </div>
         </div>
 
-        {/* Dropdown + Actions */}
         <div className="flex flex-wrap items-center justify-between mt-6 gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -158,7 +132,7 @@ const CreateTicketForm = () => {
                 >
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={agent.photo} alt={agent.name} width={40} height={40}/>
+                      <AvatarImage src={agent.photo} alt={agent.name} width={40} height={40} />
                       <AvatarFallback>{agent.name[0]}</AvatarFallback>
                     </Avatar>
                     <span>{agent.name}</span>
@@ -175,7 +149,7 @@ const CreateTicketForm = () => {
             <Button
               variant="destructive"
               className="rounded-md"
-              onClick={() => router.push("/apps/tickets")}
+              onClick={() => router.push("/admin/tickets")}
             >
               Cancel
             </Button>
