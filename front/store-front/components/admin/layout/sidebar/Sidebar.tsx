@@ -2,27 +2,24 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useTheme } from 'next-themes'
 import { usePathname } from 'next/navigation'
-import SidebarContent from './Sidebaritems'
+import SidebarContent, { MenuItem, ChildItem } from './Sidebaritems' // 타입 import 추가
 import SimpleBar from 'simplebar-react'
 import { Icon } from '@iconify/react'
 import {
-  AMLogo,
   AMMenu,
   AMMenuItem,
   AMSidebar,
-  AMSubmenu,
-} from 'tailwind-sidebar'
+} from 'tailwind-sidebar' // 사용하지 않는 AMSubmenu, AMLogo 제거
 import 'tailwind-sidebar/styles.css'
 
-// 3. Pro 배지 렌더링 로직 완전 제거 (깔끔한 메뉴 렌더링 함수)
+// 3뎁스 로직(AMSubmenu) 및 재귀 호출 제거, ChildItem 배열만 렌더링하도록 단순화
 const renderSidebarItems = (
-  items: any[],
+  items: ChildItem[],
   currentPath: string,
-  onClose?: () => void,
-  isSubItem: boolean = false
+  onClose?: () => void
 ) => {
-  return items.map((item, index) => {
-    const isSelected = currentPath === item?.url
+  return items.map((item) => {
+    const isSelected = currentPath === item.url
     const IconComp = item.icon || null
 
     const iconElement = IconComp ? (
@@ -31,51 +28,24 @@ const renderSidebarItems = (
       <Icon icon={'ri:checkbox-blank-circle-line'} height={9} width={9} />
     )
 
-    // Heading (예: "쇼핑몰 관리", "주문/배송 관리")
-    if (item.heading) {
-      return (
-        <div className='mb-1 mt-4 first:mt-0' key={item.heading}>
-          <AMMenu
-            subHeading={item.heading}
-            ClassName='hide-menu leading-21 text-slate-500 font-bold uppercase text-xs tracking-wider'
-          />
-        </div>
-      )
-    }
-
-    // Submenu (하위 메뉴가 있을 경우)
-    if (item.children?.length) {
-      return (
-        <AMSubmenu
-          key={item.id}
-          icon={iconElement}
-          title={item.name}
-          ClassName='mt-0.5 text-slate-700 dark:text-slate-300'>
-          {renderSidebarItems(item.children, currentPath, onClose, true)}
-        </AMSubmenu>
-      )
-    }
-
-    // Regular menu item (일반 메뉴 버튼)
     const linkTarget = item.url?.startsWith('https') ? '_blank' : '_self'
 
-    const itemClassNames = isSubItem
-      ? `mt-0.5 text-slate-600 dark:text-slate-400 !hover:bg-transparent ${isSelected ? '!bg-transparent !text-primary font-semibold' : ''
+    // 2뎁스 고정이므로 기존 isSubItem(true) 일 때의 스타일을 기본으로 적용
+    const itemClassNames = `mt-0.5 text-slate-600 dark:text-slate-400 !hover:bg-transparent ${isSelected ? '!bg-transparent !text-primary font-semibold' : ''
       } !px-1.5`
-      : `mt-0.5 text-slate-700 dark:text-slate-300`
 
+    // 불필요한 이중 key 제거 (item.id 사용)
     return (
-      <div onClick={onClose} key={index}>
+      <div onClick={onClose} key={item.id || item.name}>
         <AMMenuItem
-          key={item.id}
           icon={iconElement}
           isSelected={isSelected}
           link={item.url || undefined}
           target={linkTarget}
           disabled={item.disabled}
           component={Link}
-          className={`${itemClassNames}`}>
-          <span className='truncate flex-1'>{item.title || item.name}</span>
+          className={itemClassNames}>
+          <span className='truncate flex-1'>{item.name}</span>
         </AMMenuItem>
       </div>
     )
@@ -98,7 +68,7 @@ const SidebarLayout = ({ onClose }: { onClose?: () => void }) => {
       mode={sidebarMode}
       className='fixed left-0 top-0 xl:top-[68px] border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-10 h-screen'>
 
-      {/* 1. 로고 이미지 적용 (FullLogo 제거) */}
+      {/* 기존 로고 영역 유지 */}
       <div className='px-6 h-[68px] flex items-center xl:hidden border-b border-slate-100 dark:border-slate-800'>
         <Link href="/admin/dashboard" className="flex items-center gap-2">
           <Image
@@ -117,20 +87,26 @@ const SidebarLayout = ({ onClose }: { onClose?: () => void }) => {
       {/* Sidebar Menu Scroll Area */}
       <SimpleBar className='h-[calc(100vh-68px)]'>
         <div className='px-4 py-6'>
-          {SidebarContent.map((section, index) => (
-            <div key={index}>
-              {renderSidebarItems(
-                [
-                  ...(section.heading ? [{ heading: section.heading }] : []),
-                  ...(section.children || []),
-                ],
-                pathname,
-                onClose
+
+          {/* 강제 배열 쪼개기 제거, SidebarContent의 2뎁스 구조 그대로 순회 */}
+          {SidebarContent.map((section: MenuItem) => (
+            <div key={section.heading || section.name}>
+              {/* 1뎁스: 그룹 제목 */}
+              {section.heading && (
+                <div className='mb-1 mt-4 first:mt-0'>
+                  <AMMenu
+                    subHeading={section.heading}
+                    ClassName='hide-menu leading-21 text-slate-500 font-bold uppercase text-xs tracking-wider'
+                  />
+                </div>
               )}
+
+              {/* 2뎁스: 하위 메뉴 아이템 렌더링 */}
+              {section.children && renderSidebarItems(section.children, pathname, onClose)}
             </div>
           ))}
 
-          {/* 2. 실용적인 시스템 상태 위젯으로 교체 (홍보용 로켓 제거) */}
+          {/* 기존 시스템 상태 위젯 유지 */}
           <div className='mt-8 pt-6 border-t border-slate-100 dark:border-slate-800'>
             <div className='flex flex-col gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700'>
 
@@ -138,7 +114,6 @@ const SidebarLayout = ({ onClose }: { onClose?: () => void }) => {
                 <span className='text-xs font-semibold text-slate-500 uppercase tracking-wider'>
                   System Status
                 </span>
-                {/* 깜빡이는 녹색 불빛 효과 */}
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>

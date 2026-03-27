@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import CardBox from "../shared/CardBox"; // keep your custom wrapper
+import CardBox from "../shared/CardBox";
 
 interface ProductType {
   photo: any;
@@ -28,7 +28,7 @@ export const Product = ({
   salesPrice,
   rating,
 }: ProductType) => {
-  // Generate an array for rating stars
+  // 별점 렌더링 함수 (기존 로직 보존)
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, index) => (
       <Icon
@@ -43,7 +43,7 @@ export const Product = ({
   };
 
   return (
-    <CardBox className="p-0 overflow-hidden group card-hover">
+    <CardBox className="p-0 overflow-hidden group card-hover bg-white dark:bg-dark-card">
       <div className="relative">
         <Link href={`/`}>
           <div className="overflow-hidden h-[265px] w-full">
@@ -52,7 +52,7 @@ export const Product = ({
               alt={title}
               height={265}
               width={500}
-              className="w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           </div>
         </Link>
@@ -70,20 +70,21 @@ export const Product = ({
                     <Icon icon="tabler:basket" height={18} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Add to Cart</TooltipContent>
+                <TooltipContent>장바구니 담기</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
 
-          <h6 className="text-base mt-2 line-clamp-1 group-hover:text-primary transition-colors">
+          <h6 className="text-base mt-2 line-clamp-1 group-hover:text-primary transition-colors font-semibold">
             {title}
           </h6>
 
           <div className="flex justify-between items-center mt-1">
-            <h5 className="text-base flex gap-2 items-center">
-              ${price}
-              <span className="font-normal text-sm text-muted-foreground line-through">
-                ${salesPrice}
+            <h5 className="text-base flex gap-2 items-center font-bold text-slate-900 dark:text-white">
+              {/* 수정 포인트: 콤마 포맷팅과 원 단위 적용 */}
+              {price.toLocaleString()}원
+              <span className="font-normal text-sm text-slate-400 line-through">
+                {salesPrice.toLocaleString()}원
               </span>
             </h5>
 
