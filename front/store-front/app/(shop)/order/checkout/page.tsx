@@ -8,7 +8,7 @@ import api from '@/lib/api';
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [orderItems, setOrderItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -84,10 +84,15 @@ function CheckoutContent() {
     };
 
     try {
-      await api.post('/api/orders', payload);
+      // ✅ 수정된 부분: 응답 데이터를 받아오도록 수정
+      const response = await api.post('/api/orders', payload);
+
+      // ✅ 수정된 부분: 응답에서 orderId 추출 후 주문 완료 페이지로 리다이렉트
+      const createdOrderId = response.data.orderId;
 
       alert('결제가 완료되었습니다!');
-      router.push('/');
+      router.push(`/order/success?orderId=${createdOrderId}`);
+
     } catch (error) {
       console.error('주문 요청 에러:', error);
       alert('주문 처리 중 오류가 발생했습니다.');
@@ -103,7 +108,7 @@ function CheckoutContent() {
       {/* 폼 영역 */}
       <div className="lg:col-span-2 space-y-8">
         <h1 className="text-2xl font-bold">주문/결제</h1>
-        
+
         <section className="p-6 border rounded-lg bg-white shadow-sm">
           <h2 className="text-xl font-bold mb-4">배송지 정보</h2>
           <div className="space-y-4">
@@ -169,7 +174,7 @@ function CheckoutContent() {
             <span>총 결제 금액</span>
             <span className="text-red-600">{grandTotal.toLocaleString()}원</span>
           </div>
-          <button 
+          <button
             onClick={handleSubmitOrder}
             disabled={isSubmitting}
             className="w-full bg-blue-600 text-white py-4 rounded-lg font-bold hover:bg-blue-700 transition disabled:bg-gray-400"
