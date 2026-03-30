@@ -23,5 +23,12 @@
     npm install
     npm run dev
 
+npm run build
+npm start?
+
 Next.js, typescript, tailwind, shadcn/ui 사용 희망
+
+트리구조 출력 명령어
+
+tree /f > project_structure.txt
 

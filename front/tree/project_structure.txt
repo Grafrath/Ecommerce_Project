@@ -1,0 +1,331 @@
+폴더 PATH의 목록입니다.
+볼륨 일련 번호는 3E9B-727D입니다.
+C:.
+│  project_structure.txt
+│  
+├─app
+│  │  favicon.ico
+│  │  globals.css
+│  │  layout.tsx
+│  │  page.tsx
+│  │  
+│  ├─(admin)
+│  │  └─admin
+│  │      ├─(dashboard)
+│  │      │  │  layout.tsx
+│  │      │  │  
+│  │      │  ├─activity-logs
+│  │      │  │      page.tsx
+│  │      │  │      
+│  │      │  └─dashboard
+│  │      │          page.tsx
+│  │      │          
+│  │      ├─categories
+│  │      │      page.tsx
+│  │      │      
+│  │      ├─cs
+│  │      │  │  page.tsx
+│  │      │  │  
+│  │      │  └─inquiry
+│  │      │      └─[id]
+│  │      │              page.tsx
+│  │      │              
+│  │      ├─login
+│  │      │      LoginForm.tsx
+│  │      │      page.tsx
+│  │      │      
+│  │      ├─orders
+│  │      │  │  page.tsx
+│  │      │  │  
+│  │      │  ├─shipping
+│  │      │  │      page.tsx
+│  │      │  │      
+│  │      │  └─[id]
+│  │      │          page.tsx
+│  │      │          
+│  │      ├─products
+│  │      │  │  page.tsx
+│  │      │  │  
+│  │      │  └─add
+│  │      │          page.tsx
+│  │      │          
+│  │      ├─settings
+│  │      │  ├─account
+│  │      │  │      page.tsx
+│  │      │  │      
+│  │      │  └─site
+│  │      │          page.tsx
+│  │      │          
+│  │      └─users
+│  │          │  page.tsx
+│  │          │  
+│  │          └─[id]
+│  │                  page.tsx
+│  │                  
+│  ├─(shop)
+│  │      layout.tsx
+│  │      
+│  └─api
+│      └─sse
+│              route.ts
+│              
+├─components
+│  │  theme-provider.tsx
+│  │  
+│  ├─admin
+│  │  ├─apps
+│  │  │  └─tickets
+│  │  │          CreateTicketForm.tsx
+│  │  │          index.tsx
+│  │  │          TicketFilter.tsx
+│  │  │          TicketListing.tsx
+│  │  │          
+│  │  ├─dashboard
+│  │  │      BestSeller.tsx
+│  │  │      Footer.tsx
+│  │  │      MonthlyEarning.tsx
+│  │  │      Product.tsx
+│  │  │      ProductPerformance.tsx
+│  │  │      RecentTransaction.tsx
+│  │  │      SalesOverview.tsx
+│  │  │      StaffPerformance.tsx
+│  │  │      YearlyBreakup.tsx
+│  │  │      
+│  │  ├─layout
+│  │  │  ├─header
+│  │  │  │      Data.ts
+│  │  │  │      Header.tsx
+│  │  │  │      Notifications.tsx
+│  │  │  │      Profile.tsx
+│  │  │  │      Topbar.tsx
+│  │  │  │      
+│  │  │  ├─shared
+│  │  │  │  └─breadcrumb
+│  │  │  │          BreadcrumbComp.tsx
+│  │  │  │          
+│  │  │  └─sidebar
+│  │  │          Sidebar.tsx
+│  │  │          Sidebaritems.ts
+│  │  │          
+│  │  ├─login
+│  │  │      login.tsx
+│  │  │      
+│  │  ├─shared
+│  │  │      CardBox.tsx
+│  │  │      
+│  │  └─user-profile
+│  │          index.tsx
+│  │          
+│  └─ui
+│          accordion.tsx
+│          alert.tsx
+│          avatar.tsx
+│          badge.tsx
+│          breadcrumb.tsx
+│          button.tsx
+│          calendar.tsx
+│          card.tsx
+│          carousel.tsx
+│          checkbox.tsx
+│          collapsible.tsx
+│          command.tsx
+│          dialog.tsx
+│          drawer.tsx
+│          dropdown-menu.tsx
+│          input-group.tsx
+│          input-otp.tsx
+│          input.tsx
+│          label.tsx
+│          navigation-menu.tsx
+│          popover.tsx
+│          progress.tsx
+│          radio-group.tsx
+│          select.tsx
+│          separator.tsx
+│          sheet.tsx
+│          skeleton.tsx
+│          sonner.tsx
+│          switch.tsx
+│          table.tsx
+│          tabs.tsx
+│          textarea.tsx
+│          tooltip.tsx
+│          
+├─features
+│  ├─admin
+│  │      actions.ts
+│  │      
+│  ├─cart
+│  │  │  actions.ts
+│  │  │  
+│  │  └─components
+│  │          AddToCartButton.tsx
+│  │          
+│  ├─order
+│  └─payment
+├─public
+│  │  file.svg
+│  │  globe.svg
+│  │  next.svg
+│  │  vercel.svg
+│  │  window.svg
+│  │  
+│  └─admin
+│      └─images
+│          │  Gemini_Generated_Image_wnpfpywnpfpywnpf (1).png
+│          │  Gemini_Generated_Image_wnpfpywnpfpywnpf (2).png
+│          │  Gemini_Generated_Image_wnpfpywnpfpywnpf (3).png
+│          │  Gemini_Generated_Image_wnpfpywnpfpywnpf.png
+│          │  
+│          ├─backgrounds
+│          │      bronze.png
+│          │      emailSv.png
+│          │      empty-shopping-cart.svg
+│          │      errorimg.svg
+│          │      gifts.png
+│          │      gold.png
+│          │      img1.jpg
+│          │      kanban-img-1.jpg
+│          │      kanban-img-2.jpg
+│          │      kanban-img-3.jpg
+│          │      kanban-img-4.jpg
+│          │      maintenance.svg
+│          │      make-social-media.png
+│          │      my-card.jpg
+│          │      payment.svg
+│          │      preview-img.png
+│          │      profile-bg.jpg
+│          │      profilebg.jpg
+│          │      rocket.png
+│          │      school.png
+│          │      silver.png
+│          │      teamwork.png
+│          │      track-bg.png
+│          │      unlimited-bg.png
+│          │      website-under-construction.svg
+│          │      welcome-bg2.png
+│          │      
+│          ├─blog
+│          │      blog-img1.jpg
+│          │      blog-img10.jpg
+│          │      blog-img11.jpg
+│          │      blog-img2.jpg
+│          │      blog-img3.jpg
+│          │      blog-img4.jpg
+│          │      blog-img5.jpg
+│          │      blog-img6.jpg
+│          │      blog-img8.jpg
+│          │      blog-img9.jpg
+│          │      
+│          ├─breadcrumb
+│          │      ChatBc.png
+│          │      
+│          ├─dashboard
+│          │      customer-support-img.png
+│          │      
+│          ├─logos
+│          │      dark-logo.svg
+│          │      light-logo.svg
+│          │      logo-adminmart.svg
+│          │      logo-icon.svg
+│          │      logo-square.png
+│          │      logo.png
+│          │      
+│          ├─products
+│          │      empty-shopping-bag.gif
+│          │      payment-complete.jpg
+│          │      payment.svg
+│          │      product-1.jpg
+│          │      product-2.jpg
+│          │      product-3.jpg
+│          │      product-4.jpg
+│          │      s1.jpg
+│          │      s10.jpg
+│          │      s11.jpg
+│          │      s12.jpg
+│          │      s2.jpg
+│          │      s3.jpg
+│          │      s4.jpg
+│          │      s5.jpg
+│          │      s6.jpg
+│          │      s7.jpg
+│          │      s8.jpg
+│          │      s9.jpg
+│          │      
+│          ├─profile
+│          │      user-1.jpg
+│          │      user-10.jpg
+│          │      user-2.jpg
+│          │      user-3.jpg
+│          │      user-4.jpg
+│          │      user-5.jpg
+│          │      user-6.jpg
+│          │      user-7.jpg
+│          │      user-8.jpg
+│          │      user-9.jpg
+│          │      
+│          └─svgs
+│                  angular-cat-icon.svg
+│                  apple-icon.svg
+│                  bt-cat-icon.svg
+│                  cart-icon.svg
+│                  facebook-icon.svg
+│                  google-icon.svg
+│                  icon-account.svg
+│                  icon-adobe.svg
+│                  icon-bars.svg
+│                  icon-briefcase.svg
+│                  icon-chrome.svg
+│                  icon-connect.svg
+│                  icon-dd-application.svg
+│                  icon-dd-cart.svg
+│                  icon-dd-chat.svg
+│                  icon-dd-date.svg
+│                  icon-dd-invoice.svg
+│                  icon-dd-lifebuoy.svg
+│                  icon-dd-message-box.svg
+│                  icon-dd-mobile.svg
+│                  icon-favorites.svg
+│                  icon-figma.svg
+│                  icon-flag-cn.svg
+│                  icon-flag-en.svg
+│                  icon-flag-fr.svg
+│                  icon-flag-sa.svg
+│                  icon-inbox.svg
+│                  icon-javascript.svg
+│                  icon-mailbox.svg
+│                  icon-master-card-2.svg
+│                  icon-master-card.svg
+│                  icon-office-bag-2.svg
+│                  icon-office-bag.svg
+│                  icon-paypal.svg
+│                  icon-pie.svg
+│                  icon-speech-bubble.svg
+│                  icon-tasks.svg
+│                  icon-user-male.svg
+│                  icon-zip-folder.svg
+│                  mastercard.svg
+│                  next-cat-icon.svg
+│                  nuxt-cat-icon.svg
+│                  paypal.svg
+│                  react-cat-icon.svg
+│                  vue-cat-icon.svg
+│                  
+└─styles
+    └─admin
+        └─css
+            │  app.css
+            │  globals.css
+            │  
+            ├─layouts
+            │      container.css
+            │      header.css
+            │      sidebar.css
+            │      
+            ├─override
+            │      reboot.css
+            │      
+            └─theme
+                    dark-colors.css
+                    default-colors.css
+                    
